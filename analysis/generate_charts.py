@@ -60,7 +60,7 @@ def generate_charts():
                     color='#e6edf3', rotation=90, alpha=0.8)
 
     ax.set_ylabel('Mean Edge ($)', fontsize=12, color='#e6edf3')
-    ax.set_title('Strategy Evolution: From $0 to #3 on the Leaderboard',
+    ax.set_title('Strategy Evolution: From $0 to #2 on the Leaderboard',
                  fontsize=14, fontweight='bold', color='#e6edf3', pad=15)
     ax.tick_params(colors='#8b949e')
     ax.spines['bottom'].set_color('#30363d')

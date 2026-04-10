@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>A market-making strategy that placed #3 in Paradigm's Prediction Market Challenge</strong>
+  <strong>A market-making strategy that placed #2 in Paradigm's Prediction Market Challenge</strong>
   <br>
   <em>110 strategy iterations. 8 hours. One hackathon.</em>
 </p>
@@ -22,12 +22,24 @@
 
 | Metric | Value |
 |--------|-------|
-| **Final Placement** | #3 out of all submissions |
-| **Platform Score** | ~$54 mean edge per simulation |
-| **Local Score (200 sims)** | $46.70 mean edge |
+| **Final Placement** | **#2** out of all submissions |
+| **Final Score** | $41.09 mean edge |
 | **Strategy Iterations** | 110 versions |
 | **Development Time** | 8 hours |
 | **Edge Source** | ~60% monopoly regime, ~40% normal regime |
+
+<details>
+<summary>Final Leaderboard</summary>
+
+| Rank | Author | Mean Edge |
+|------|--------|-----------|
+| #1 | @ryanli | $42.32 |
+| **#2** | **@octavicristea** | **$41.09** |
+| #3 | @zhimao_liu | $40.81 |
+| #4 | @onurakpolat | $24.87 |
+| #5 | @ChinesePowered | $23.90 |
+
+</details>
 
 <img src="analysis/edge_breakdown.png" alt="Edge Breakdown: Retail vs Arb" width="700">
 
