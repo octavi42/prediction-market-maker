@@ -5,7 +5,7 @@
 <p align="center">
   <strong>A market-making strategy that placed #3 in Paradigm's Prediction Market Challenge</strong>
   <br>
-  <em>110 strategy iterations. 8 hours. Built with <a href="https://claude.ai/claude-code">Claude Code</a>.</em>
+  <em>110 strategy iterations. 8 hours. One hackathon.</em>
 </p>
 
 <p align="center">
@@ -264,13 +264,9 @@ uv run pytest
 └── tests/                       # Test suite
 ```
 
-## Built With
+## Tools
 
-This entire strategy — all 110 iterations, every test, every analysis — was developed using [Claude Code](https://claude.ai/claude-code) during Paradigm's 8-hour hackathon window. Claude Code handled:
-- Strategy design and implementation
-- Parameter search and optimization
-- Performance analysis and debugging
-- This README
+Development was accelerated using [Claude Code](https://claude.ai/claude-code) for rapid iteration, parameter search, and analysis during the 8-hour hackathon window.
 
 ## License
 
