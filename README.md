@@ -9,11 +9,11 @@
 </p>
 
 <p align="center">
+  <a href="#how-the-market-works">How It Works</a> &bull;
   <a href="#the-strategy">Strategy</a> &bull;
   <a href="#key-discoveries">Discoveries</a> &bull;
   <a href="#what-failed">Failures</a> &bull;
-  <a href="#quickstart">Run It</a> &bull;
-  <a href="#strategy-evolution">Evolution</a>
+  <a href="#quickstart">Run It</a>
 </p>
 
 ---
@@ -23,7 +23,7 @@
 | Metric | Value |
 |--------|-------|
 | **Final Placement** | **#2** out of all submissions |
-| **Final Score** | $41.09 mean edge |
+| **Final Score** | $41.09 mean edge per simulation |
 | **Strategy Iterations** | 110 versions |
 | **Development Time** | 8 hours |
 | **Edge Source** | ~60% monopoly regime, ~40% normal regime |
@@ -41,16 +41,14 @@
 
 </details>
 
-<img src="analysis/edge_breakdown.png" alt="Edge Breakdown: Retail vs Arb" width="700">
-
 ## What You'll Learn
 
-This repo is a complete case study in **automated market making for prediction markets**. If you're interested in Polymarket, Kalshi, or prediction market microstructure, this is for you.
+This repo is a complete case study in **market making for prediction markets** — the mechanics of quoting, adverse selection, inventory risk, and how to size orders. Useful background if you're interested in prediction market microstructure or quantitative trading concepts.
 
-- **How market makers actually profit** — capturing the spread between retail flow and true probability
+- **How market makers profit** — capturing the spread between uninformed flow and true probability
 - **The monopoly regime** — the single insight worth more than 100 parameter tweaks
-- **Why sizing matters more than you think** — and how to match retail order flow
-- **Volatility-adjusted quote filtering** — avoiding the omniscient arbitrageur
+- **Why sizing matters more than you think** — and how to match expected retail order flow
+- **Volatility-adjusted quote filtering** — when to quote and when to sit out
 - **Inventory management** — how skew prevents catastrophic losses (removing it = -$7 swing)
 
 ## The Challenge
@@ -61,20 +59,45 @@ This repo is a complete case study in **automated market making for prediction m
 - A binary YES/NO contract that settles to $1 or $0
 - A FIFO limit order book with integer tick prices (1-99 cents)
 - Your strategy can only place **passive** (limit) orders
+- 2,000 steps per simulation, scored across many simulations
 
-**The agents:**
-- **You** — passive market maker, trying to maximize edge
-- **Competitor** — static hidden ladder, always present, replenishes after fills
-- **Arbitrageur** — knows the true probability, sweeps ALL mispriced orders before retail sees them
-- **Retail** — uninformed traders, Poisson arrival (~0.25/step), LogNormal sizing (~$4.5 mean)
-
-**Scoring** is based on **edge**, not P&L:
+**Scoring** is based on **edge** — how good your fill price was compared to the true probability at the moment of the fill. This is not P&L; it measures pure pricing skill:
 ```
 Buy edge  = quantity x (true_probability - fill_price)
 Sell edge = quantity x (fill_price - true_probability)
 ```
+Positive edge = you bought below fair value or sold above it. The final score is the **mean total edge across all simulations**.
 
-The challenge: capture positive edge from retail while minimizing negative edge from the arbitrageur.
+## How the Market Works
+
+Every step, four agents interact with the order book in this order:
+
+```
+    ┌──────────────────────────────────────────────┐
+    │              Each Step (in order)              │
+    │                                                │
+    │  1. Competitor replenishes its ladder           │
+    │  2. YOUR STRATEGY places/cancels orders         │
+    │  3. True probability updates (random walk)      │
+    │  4. Arbitrageur sweeps mispriced orders          │
+    │  5. Retail sends random market orders            │
+    │  6. Fills recorded, edge computed                │
+    └──────────────────────────────────────────────┘
+```
+
+**The agents you're competing against:**
+
+| Agent | Behavior | Impact on You |
+|-------|----------|---------------|
+| **Competitor** | Static hidden ladder on both sides. Replenishes consumed levels. | Sets the baseline spread you must beat. |
+| **Arbitrageur** | Knows the true probability. Sweeps every mispriced order **before** retail arrives. | Your enemy. Every bad quote gets taken at a loss. |
+| **Retail** | Random market orders, ~0.25/step, ~$4.5 mean notional. | Your profit source. Uninformed flow = positive edge. |
+
+**The core tension:** Every order you place will be seen by the arbitrageur first. If your price is wrong, the arb takes it. Only the orders that survive the arb get filled by retail (where you make money).
+
+<img src="analysis/edge_breakdown.png" alt="Edge Breakdown: Retail vs Arb" width="700">
+
+*Green = edge earned from retail fills (profit). Red = edge lost to arbitrageur fills (cost of doing business). Net = your score.*
 
 ## The Strategy
 
@@ -99,27 +122,27 @@ for tick in range(1, min(6, comp_ask)):
     sz = min(base_size * frac, max(0.0, max_pos - net_inv))
 ```
 
-This single regime accounts for ~$28 of the ~$47 total edge. The key insight: **when no one else is quoting, every retail fill is pure profit.**
+Why this works: at extreme prices, the arbitrageur has nothing to sweep — our quotes are on the right side of true value. Every retail fill is pure profit.
 
 ### Regime 2: Normal (40% of total edge)
 
 When both sides are present, we quote inside the competitor's spread — but only when it's profitable.
 
-**Z-score filter:** We estimate volatility and only quote when the spread offers enough edge relative to the risk of getting picked off:
+**Z-score filter:** We estimate how much the true probability might move (volatility) and only quote when the available spread is wide enough to justify the risk:
 
 ```python
-spread_value = (comp_spread - 2) / 2.0
+spread_value = (comp_spread - 2) / 2.0  # excess spread beyond minimum
 sigma_est = max(phi_factor * 39.9 / sqrt(steps_remaining), vol_ema)
-z = spread_value / sigma_est
+z = spread_value / sigma_est  # edge in units of volatility
 
-# Tiered threshold: stricter for tight spreads
+# Tiered threshold: stricter for tight spreads (higher arb risk per tick)
 if spread_value >= 3.0 and z < 0.4: return  # skip
 if spread_value <  3.0 and z < 0.8: return  # skip
 ```
 
-**Retail-matching sizing:** Order size = `14/prob`, which matches the expected retail fill size at each probability level. Bigger → excess shares get swept by the arb. Smaller → leaving money on the table.
+**Retail-matching sizing:** Order size = `14/prob`, which matches the expected retail fill size at each probability level. Post more than retail will fill → excess shares get swept by the arb. Post less → leaving edge on the table.
 
-**Inventory skew:** When net inventory builds up, we widen our quote on the heavy side:
+**Inventory skew:** When net inventory builds up, we widen our quote on the heavy side to encourage mean-reversion:
 
 ```python
 skew_rate = min(0.08, 2.8 / max(5.0, size))
@@ -132,16 +155,16 @@ bid_skew = int(round(net_inv * skew_rate)) if net_inv > 0 else 0
 
 ### 1. The Monopoly Regime is Everything
 
-Before discovering monopoly mode (v60), the strategy earned ~$15/sim. After: ~$45/sim. **One regime change tripled the score.**
+Before discovering monopoly mode (v60), the strategy earned ~$15/sim from retail but lost ~$24/sim to the arb — net negative. After adding monopoly: net **+$40/sim**. One regime change flipped the entire strategy from losing to winning.
 
-When the competitor's quotes vanish on one side, the true probability is extreme (near 0 or 1). The arbitrageur has nothing to sweep because our prices are on the right side of true value. Retail flow becomes pure profit.
+When the competitor's quotes vanish on one side, the true probability is extreme (near 0 or 1). The arbitrageur has nothing to sweep because our prices are already on the right side of true value.
 
 ### 2. Size = 85/prob in Monopoly
 
 The monopoly sizing formula went through many iterations:
-- `38/prob` (v74): $44.41
-- `85/prob` (v108): $46.35
-- `100/prob` (v109): $46.02 (worse — cash constraints start binding)
+- `38/prob` (v74): $44.41 local
+- `85/prob` (v108): $46.35 local
+- `100/prob`: $46.02 local (worse — cash constraints start binding)
 
 The sweet spot is aggressive but not so aggressive that you run out of collateral.
 
@@ -159,25 +182,25 @@ The skew formula `min(0.08, 2.8/size)` was found through parameter search. It wi
 
 ### 5. Z-Score Filtering Saves ~$5/sim
 
-Without the z-score filter, we'd quote on every step. The arbitrageur sweeps stale quotes whenever the spread doesn't justify the risk. The tiered threshold (strict for tight spreads, loose for wide) was the final +$0.35 improvement.
+Without the z-score filter, we'd quote on every step regardless of spread width. The arbitrageur sweeps stale quotes whenever the spread doesn't justify the risk. The tiered threshold (strict for tight spreads, loose for wide) was the final +$0.35 improvement.
 
 ## What Failed
 
-These all scored **worse** than the final strategy. Counter-intuitive failures are the most instructive:
+These all scored **worse** than the final strategy. The "Delta" column shows the change vs the final v109 baseline ($46.70 local). Counter-intuitive failures are the most instructive:
 
-| What We Tried | Expected | Actual | Why It Failed |
-|---------------|----------|--------|---------------|
+| What We Tried | Expected | Delta vs Final | Why It Failed |
+|---------------|----------|----------------|---------------|
 | Multi-level normal quoting (5 price levels) | More fills = more edge | **-$7.50** | More arb exposure per step vastly outweighed extra retail |
 | Smaller normal sizes (10/prob, 12/prob) | Less arb damage | **-$0.50 to -$1.00** | Retail fill reduction exceeded arb savings |
-| No cash buffer (using 100% of cash) | More capital deployed | **-$1.20** (at some seeds) | Inconsistent across seeds; cash crunch in bad scenarios |
+| No cash buffer (using 100% of cash) | More capital deployed | **-$1.20** (some seeds) | Inconsistent across seeds; cash crunch in bad scenarios |
 | Adaptive z-threshold based on inventory | Smarter filtering | **-$0.30** | Added noise without improving edge/risk tradeoff |
-| 3-tier z-threshold system | Finer-grained control | **+$0.00** | Large-spread threshold never actually binds (z always >>0.4 for wide spreads) |
+| 3-tier z-threshold system | Finer-grained control | **$0.00** | Large-spread threshold never actually binds (z always >>0.4) |
 | Higher sigma prior (45, 50) | More conservative | **-$0.20** | Filtered too many profitable opportunities |
 | Monopoly size 100/prob or 120/prob | More monopoly edge | **-$0.70 to -$9.00** | Cash constraints and position limits start binding |
 
 ## Strategy Evolution
 
-The journey from v1 to v109, with 7 milestone versions:
+The journey from v1 to v109, with 7 milestone versions. Note that scores aren't strictly monotonic — some versions traded off one dimension to unlock gains in the next (v97 reduced normal-regime size to set up v99's retail-matching formula):
 
 | Version | Key Change | Mean Edge | Retail | Arb | What Changed |
 |---------|-----------|-----------|--------|-----|--------------|
@@ -189,40 +212,7 @@ The journey from v1 to v109, with 7 milestone versions:
 | **v99** | Retail matching | $42.95 | +$66.26 | -$23.31 | Size = 14/prob to match retail notional |
 | **v109** | Final tuning | **$46.70** | +$72.82 | -$26.11 | mono=85/prob, pos=3000, tiered z-threshold |
 
-> All milestone versions are in [`strategies/evolution/`](strategies/evolution/)
-
-## How It Works
-
-```
-                    ┌─────────────────────────────────────────┐
-                    │          Simulation Engine               │
-                    │  (2,000 steps per simulation)            │
-                    └──────────────┬──────────────────────────┘
-                                   │
-                    ┌──────────────▼──────────────────────────┐
-                    │         Each Step (in order):            │
-                    │                                          │
-                    │  1. Replenish competitor orders           │
-                    │  2. Call your strategy.on_step()          │
-                    │  3. Apply your orders to the book         │
-                    │  4. Advance latent process (true prob)    │
-                    │  5. Arbitrageur sweeps mispriced orders   │
-                    │  6. Retail sends market orders            │
-                    │  7. Record fills and compute edge         │
-                    └──────────────────────────────────────────┘
-
-    Your Strategy                Arbitrageur              Retail
-    ┌──────────┐              ┌──────────────┐        ┌──────────┐
-    │ Passive  │              │  Knows true  │        │ Random   │
-    │ orders   │              │  probability │        │ market   │
-    │ only     │              │  Sweeps ALL  │        │ orders   │
-    │          │              │  stale quotes│        │ ~0.25/   │
-    │ Goal:    │              │  BEFORE      │        │ step     │
-    │ +edge    │              │  retail      │        │ ~$4.5    │
-    └──────────┘              └──────────────┘        └──────────┘
-```
-
-**The core tension:** Every order you place will be seen by the arbitrageur first. If your price is wrong, the arb takes it. Only the orders that survive the arb get filled by retail (where you make money). Your strategy must thread this needle.
+> All milestone versions with detailed comments are in [`strategies/evolution/`](strategies/evolution/)
 
 ## Quickstart
 
