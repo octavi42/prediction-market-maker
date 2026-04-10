@@ -1,3 +1,7 @@
+"""v50: Z-Score Regimes — Mean edge: -$2.59 (retail +$21, arb -$24)
+Key change: Only quote when spread/volatility ratio exceeds threshold.
+Introduced phi_factor (probability-adjusted vol) and sigma floor.
+Retail edge tripled but arb losses still dominated — needed monopoly."""
 from __future__ import annotations
 import math
 from orderbook_pm_challenge.strategy import BaseStrategy
@@ -5,7 +9,6 @@ from orderbook_pm_challenge.types import CancelAll, PlaceOrder, Side, StepState
 
 
 class Strategy(BaseStrategy):
-    """Anara v2 strategy (bug-fixed: CancelAll() with parens)."""
     def __init__(self):
         self.max_position = 400.0
         self.prev_mid = None

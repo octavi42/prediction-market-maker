@@ -1,7 +1,7 @@
 """
 Prediction Market Challenge - Winning Strategy (v109)
 =====================================================
-Placed #3 in Paradigm's Automated Research Hackathon (April 2026)
+Placed #2 in Paradigm's Automated Research Hackathon (April 2026)
 
 A market-making strategy for a binary prediction market order book.
 Captures edge from retail order flow while minimizing losses to an

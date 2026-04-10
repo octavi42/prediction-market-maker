@@ -1,3 +1,7 @@
+"""v99: Retail Matching — Mean edge: $42.95 (retail +$66, arb -$23)
+Key change: size = 10/prob instead of flat size=10. This matches the
+expected retail fill at each probability level. At p=0.5 → size=20,
+at p=0.05 → size=200. Retail edge jumped +$11 while arb cost only +$5."""
 from __future__ import annotations
 import math
 from orderbook_pm_challenge.strategy import BaseStrategy

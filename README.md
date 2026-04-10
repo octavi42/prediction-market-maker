@@ -126,6 +126,8 @@ skew_rate = min(0.08, 2.8 / max(5.0, size))
 bid_skew = int(round(net_inv * skew_rate)) if net_inv > 0 else 0
 ```
 
+**A note on the magic numbers:** Constants like `39.9`, `85`, `0.08`, and `2.8` were not derived analytically — they were found through systematic parameter sweeps across hundreds of simulations. The [evolution milestones](strategies/evolution/) show how these values converged. Interestingly, the volatility formula `phi_factor * 39.9 / sqrt(steps_remaining)` independently converged on the same structure as the [analytical solution](https://www.paradigm.xyz/2024/11/pm-amm) from Paradigm's pm-AMM paper, where volatility is determined by price and time to expiry.
+
 ## Key Discoveries
 
 ### 1. The Monopoly Regime is Everything

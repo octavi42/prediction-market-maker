@@ -1,3 +1,6 @@
+"""v10: Asymmetric Skew — Mean edge: $4.18 (up from -$17.25)
+Key change: Only penalize the oversized side of inventory.
+Previously skew shifted BOTH quotes, causing us to chase bad fills."""
 from __future__ import annotations
 from orderbook_pm_challenge.strategy import BaseStrategy
 from orderbook_pm_challenge.types import CancelAll, PlaceOrder, Side, StepState

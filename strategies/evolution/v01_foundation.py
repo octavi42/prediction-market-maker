@@ -5,14 +5,12 @@ from orderbook_pm_challenge.types import CancelAll, PlaceOrder, Side, StepState
 
 
 class Strategy(BaseStrategy):
-    """Adaptive market maker v1.
-
-    Core ideas:
+    """v01: Foundation — Mean edge: -$17.25 (retail +$7, arb -$24)
+    The starting point. Core ideas that survived to the final version:
     - Use competitor midpoint as fair value proxy
     - Quote inside competitor spread for FIFO priority on retail
     - Inventory skew to mean-revert position
-    - Position limits with late-game wind-down
-    - Multi-level quoting: tight level for retail capture, wide level for safety
+    What was wrong: no monopoly regime, no vol filter, too much arb exposure.
     """
 
     def __init__(self):
