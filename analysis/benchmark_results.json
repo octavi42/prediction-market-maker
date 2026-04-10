@@ -1,0 +1,65 @@
+[
+  {
+    "version": "v01",
+    "description": "Foundation: multi-level quoting",
+    "mean_edge": -17.25,
+    "mean_retail_edge": 6.87,
+    "mean_arb_edge": -24.12,
+    "negative_sims": 194,
+    "total_sims": 200
+  },
+  {
+    "version": "v10",
+    "description": "Asymmetric inventory skew",
+    "mean_edge": 4.18,
+    "mean_retail_edge": 8.77,
+    "mean_arb_edge": -4.59,
+    "negative_sims": 32,
+    "total_sims": 200
+  },
+  {
+    "version": "v50",
+    "description": "Z-score filtering + regimes",
+    "mean_edge": -2.59,
+    "mean_retail_edge": 21.24,
+    "mean_arb_edge": -23.83,
+    "negative_sims": 92,
+    "total_sims": 200
+  },
+  {
+    "version": "v74",
+    "description": "Monopoly regime discovery",
+    "mean_edge": 40.64,
+    "mean_retail_edge": 65.7,
+    "mean_arb_edge": -25.06,
+    "negative_sims": 96,
+    "total_sims": 200
+  },
+  {
+    "version": "v97",
+    "description": "Retail-aware sizing",
+    "mean_edge": 37.41,
+    "mean_retail_edge": 54.96,
+    "mean_arb_edge": -17.55,
+    "negative_sims": 76,
+    "total_sims": 200
+  },
+  {
+    "version": "v99",
+    "description": "Probability-inverse sizing",
+    "mean_edge": 42.95,
+    "mean_retail_edge": 66.26,
+    "mean_arb_edge": -23.31,
+    "negative_sims": 86,
+    "total_sims": 200
+  },
+  {
+    "version": "v109",
+    "description": "Final: tuned thresholds + max position",
+    "mean_edge": 46.7,
+    "mean_retail_edge": 72.82,
+    "mean_arb_edge": -26.11,
+    "negative_sims": 108,
+    "total_sims": 200
+  }
+]
